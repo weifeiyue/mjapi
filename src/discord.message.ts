@@ -96,13 +96,16 @@ export class MidjourneyMessage {
         }
         //finished
         const content = item.content.split("**")[1];
+        const firstAttachment = item.attachments[0]
         const msg: MJMessage = {
           content,
           id: item.id,
           uri: uri,
-          proxy_url: item.attachments[0].proxy_url,
+          proxy_url: firstAttachment.proxy_url,
           flags: item.flags,
           hash: this.UriToHash(uri),
+          width: firstAttachment.width / 2,
+          height: firstAttachment.height / 2,
           progress: "done",
           options: formatOptions(item.components),
         };

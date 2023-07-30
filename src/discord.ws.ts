@@ -138,8 +138,36 @@ export class WsMessage {
       // this.log("waiting start image or info or error");
       this.updateMjEventIdByNonce(id, nonce);
       if (embeds?.[0]) {
-        const { color, description, title } = embeds[0];
+        let { color, description, title = '' } = embeds[0];
         this.log("embeds[0].color", color);
+
+        if (title.includes('Invalid link')) {
+          description = '您的图片地址AI无法访问, 请检查图片地址是否可以正常访问'
+        } else if (title.includes('Internal error') || title.includes('Bad response')) {
+          description = 'AI服务异常, 请再试'
+        } else if (title.includes('Blocked')) {
+          description = 'AI服务异常, 程序员小哥正在努力修复中'
+        } else if (title.includes('Invalid parameter')) {
+          description = '参数错误'
+        } else if (title.includes('Nsfw alert')) {
+          description = '多次输入违规词, 您暂时被封禁'
+        } else if (title.includes('Subscription paused')) {
+          description = 'AI服务暂不可用'
+        } else if (title.includes('Credits exhausted')) {
+          description = '快速模式暂不可用，请切换到慢速模式'
+        } else if (
+          title.includes('Banned prompt') ||
+          title.includes('prompt filters') ||
+          title.includes('Appeal rejected') ||
+          description.includes('against')
+        ) {
+          description = 'AI认为您的描述内容可能存在不正经内容, 多次违规您将会被封禁'
+        } else if (title.includes('Queue full')) {
+          description = 'AI服务繁忙, 请稍后再试'
+        } else if (title.includes('image filters')) {
+          description = 'AI认为您的参照图不合法, 多次违规您将会被封禁'
+        }
+
         switch (color) {
           case 16711680: //error
             if (title == "Action needed to continue") {
@@ -241,8 +269,39 @@ export class WsMessage {
       }
     }
     if (embeds?.[0]) {
-      var { description, title } = embeds[0];
-      if (title === "Duplicate images detected") {
+      var { description, title = '' } = embeds[0];
+
+      if (title.includes('Invalid link')) {
+        description = '您的图片地址AI无法访问, 请检查图片地址是否可以正常访问'
+      } else if (title.includes('Internal error') || title.includes('Bad response')) {
+        description = 'AI服务异常, 请再试'
+      } else if (title.includes('Blocked')) {
+        description = 'AI服务异常, 程序员小哥正在努力修复中'
+      } else if (title.includes('Invalid parameter')) {
+        description = '参数错误'
+      } else if (title.includes('Nsfw alert')) {
+        description = '多次输入违规词, 您暂时被封禁'
+      } else if (title.includes('Subscription paused')) {
+        description = 'AI服务暂不可用'
+      } else if (title.includes('Credits exhausted')) {
+        description = '快速模式暂不可用，请切换到慢速模式'
+      } else if (
+        title.includes('Banned prompt') ||
+        title.includes('prompt filters') ||
+        title.includes('Appeal rejected') ||
+        description.includes('against')
+      ) {
+        description = 'AI认为您的描述内容可能存在不正经内容, 多次违规您将会被封禁'
+      } else if (title.includes('Queue full')) {
+        description = 'AI服务繁忙, 请稍后再试'
+      } else if (title.includes('image filters')) {
+        description = 'AI认为您的参照图不合法, 多次违规您将会被封禁'
+      } else {
+        description = ''
+      }
+
+
+      if (description) {
         const error = new Error(description);
         this.EventError(id, error);
         return;
@@ -399,7 +458,8 @@ export class WsMessage {
 
   private done(message: any) {
     const { content, id, attachments, components, flags } = message;
-    let uri = attachments[0].url;
+    const [attachment] = attachments
+    let uri = attachment.url;
     if (this.config.ImageProxy !== "") {
       uri = uri.replace("https://cdn.discordapp.com/", this.config.ImageProxy);
     }
@@ -408,10 +468,12 @@ export class WsMessage {
       id,
       flags,
       content,
-      hash: uriToHash(attachments[0].url),
+      hash: uriToHash(attachment.url),
+      width: attachment.width / 2,
+      height: attachment.height / 2,
       progress: "done",
       uri: uri,
-      proxy_url: attachments[0].proxy_url,
+      proxy_url: attachment.proxy_url,
       options: formatOptions(components),
     };
     this.filterMessages(MJmsg);
@@ -431,16 +493,18 @@ export class WsMessage {
     if (!attachments || attachments.length === 0) {
       return;
     }
-
-    let uri = attachments[0].url;
+    const [attachment] = attachments
+    let uri = attachment.url;
     if (this.config.ImageProxy !== "") {
       uri = uri.replace("https://cdn.discordapp.com/", this.config.ImageProxy);
     }
     const MJmsg: MJMessage = {
       uri: uri,
-      proxy_url: attachments[0].proxy_url,
+      proxy_url: attachment.proxy_url,
       content: content,
       flags: flags,
+      width: attachment.width,
+      height: attachment.height,
       progress: content2progress(content),
     };
     const eventMsg: MJEmit = {

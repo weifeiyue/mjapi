@@ -5,6 +5,8 @@ export interface MJMessage {
   flags: number;
   id?: string;
   hash?: string;
+  width: number,
+  height: number,
   progress?: string;
   options?: MJOptions[];
 }
